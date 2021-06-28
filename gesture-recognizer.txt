@@ -1,0 +1,8 @@
+1) What does the recognizer do?
+It can recognize gestures for unistroke and multistroke gestures. In comparison to the $-family it repressents gestures as "cloud of points".
+
+2) Name an advantage of the $P recognizer over the $1 recognizer.
+The $P recognizer can handle both, unistroke and multistroke gestures. $1 can handle only unistroke gestures.
+
+3) What is the minimum matching distance?
+The minimum matching distance says how "good" two "cloud of points" are matching. For this the recognizer must search for the "goodness" of matching between the candidate gesture and the cloud of each template out of all n! possible matches.
