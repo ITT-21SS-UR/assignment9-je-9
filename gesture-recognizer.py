@@ -9,6 +9,7 @@ class GestureRecognizer(QtGui.QWidget):
         self.setWindowTitle("Gesture Recognizer")
         self.curr_gesture = ""
         self.gestures = []
+        self.gestures_dict = {}
         self._init_ui()
         self.setMinimumSize(800, 800)
 
@@ -32,7 +33,7 @@ class GestureRecognizer(QtGui.QWidget):
 
         # init list
         self.gesture_list = QtGui.QComboBox()
-        self.gesture_list.currentIndexChanged.connect(self.on_select)
+        #self.gesture_list.currentIndexChanged.connect(self.on_select)
         
         # init recognizer ui
         self.reco_button = QtGui.QPushButton("Recognize")
@@ -50,29 +51,36 @@ class GestureRecognizer(QtGui.QWidget):
         self.main_layout.addWidget(self.gesture_list)
         self.main_layout.addWidget(self.draw_widget)
         self.main_layout.addLayout(self.recognize_layout)
-        self.gesture_list.addItem("Triangle")
 
         self.setLayout(self.main_layout)
 
     def on_add_btn_clicked(self):
+        points = self.draw_widget.getPoints()
         gesture = self.line_edit.text()
-        if gesture != "":
+        if gesture != "" and len(points) != 0:
             self.curr_gesture = self.line_edit.text()
             if self.curr_gesture not in self.gestures:
                 self.gestures.append(self.curr_gesture)
                 self.gesture_list.clear()
                 self.gesture_list.addItems(self.gestures)
+            self.gestures_dict[self.curr_gesture] = points
         print("add btn clicked: " + self.curr_gesture)
-        print(self.draw_widget.getPoints())
+        print(self.gestures_dict)
 
     def on_reco_btn_clicked(self):
         # add result
+        if len(self.gestures) == 0:
+            self.result_label.setText("No gestures initialized")
+        elif len(self.draw_widget.getPoints()) == 0:
+            self.result_label.setText("First draw something")
+        else:
+            self.result_label.setText("not implemented yet")
         print("on reco button")
 
-    def on_select(self, i):
+    '''def on_select(self, i):
         selected_gesture = self.gesture_list.currentText()
         self.curr_gesture = selected_gesture
-        self.line_edit.setText(self.curr_gesture)
+        self.line_edit.setText(self.curr_gesture)'''
 
 
 class QDrawWidget(QtWidgets.QWidget):
