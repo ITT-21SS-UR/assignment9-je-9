@@ -5,8 +5,12 @@ from numpy.matrixlib.defmatrix import matrix
 from pyqtgraph.Qt import QtGui
 import sys
 from math import cos, pi, sin, sqrt
-#from numpy import matrixlib
 
+# workloud distributed equally
+# auth: josha benker & erik blank
+
+
+# main class with ui for recognizing gesture
 class GestureRecognizer(QtGui.QWidget):
     def __init__(self):
         super().__init__()
@@ -25,7 +29,7 @@ class GestureRecognizer(QtGui.QWidget):
         self.recognize_layout = QtGui.QGridLayout()
         self.draw_widget = QDrawWidget(100, 100)
 
-        #init line edit
+        # init line edit
         self.label = QLabel()
         self.label.setText("Gesture: ")
         self.line_edit = QLineEdit()
@@ -37,8 +41,7 @@ class GestureRecognizer(QtGui.QWidget):
 
         # init list
         self.gesture_list = QtGui.QComboBox()
-        #self.gesture_list.currentIndexChanged.connect(self.on_select)
-        
+
         # init recognizer ui
         self.reco_button = QtGui.QPushButton("Recognize")
         self.reco_label = QLabel()
@@ -79,17 +82,17 @@ class GestureRecognizer(QtGui.QWidget):
             sample = self.draw_widget.getPoints()
             reco = Recognizer()
             score = reco.calculate_similarity(sample, self.gestures_dict[self.curr_gesture])
-            output = self.curr_gesture 
+            output = self.curr_gesture
             for gesture in self.gestures_dict:
                 template = self.gestures_dict[gesture]
                 curr_score = reco.calculate_similarity(sample, template)
                 if curr_score < score:
                     score = curr_score
                     output = gesture
-            self.result_label.setText(output + " (total distance: " + str(score[0][0]) + ")")
+            self.result_label.setText(output)
 
 
-class QDrawWidget(QtWidgets.QWidget):   
+class QDrawWidget(QtWidgets.QWidget):
     def __init__(self, width=800, height=800):
         super().__init__()
         self.resize(width, height)
@@ -97,13 +100,14 @@ class QDrawWidget(QtWidgets.QWidget):
         self.drawing = False
         self.grid = True
         self.points = []
-        self.setMouseTracking(True) # only get events when button is pressed
+        # only get events when button is pressed
+        self.setMouseTracking(True)
         self.initUI()
 
-    def initUI(self):      
+    def initUI(self):
         self.setWindowTitle('Drawable')
         self.show()
-        
+
     def mousePressEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.drawing = True
@@ -112,22 +116,21 @@ class QDrawWidget(QtWidgets.QWidget):
         elif ev.button() == QtCore.Qt.RightButton:
             try:
                 recognizer = Recognizer()
-                self.points = recognizer.custom_filter(self.points) # needs to be implemented outside!
+                self.points = recognizer.custom_filter(self.points)
             except NameError:
                 pass
-            
             self.update()
-            
+
     def mouseReleaseEvent(self, ev):
         if ev.button() == QtCore.Qt.LeftButton:
             self.drawing = False
-            self.update() 
+            self.update()
 
     def mouseMoveEvent(self, ev):
         if self.drawing:
             self.points.append((ev.x(), ev.y()))
-            self.update() 
-    
+            self.update()
+
     def poly(self, pts):
         return QtGui.QPolygonF(map(lambda p: QtCore.QPointF(*p), pts))
 
@@ -139,23 +142,25 @@ class QDrawWidget(QtWidgets.QWidget):
         qp.setBrush(QtGui.QColor(20, 255, 190))
         qp.setPen(QtGui.QColor(0, 155, 0))
         qp.drawPolyline(self.poly(self.points))
-        
+
         for point in self.points:
             qp.drawEllipse(point[0]-1, point[1] - 1, 2, 2)
         if self.grid:
             qp.setPen(QtGui.QColor(255, 100, 100, 20))  # semi-transparent
-            
+
             for x in range(0, self.width(), 20):
                 qp.drawLine(x, 0, x, self.height())
-                
+
             for y in range(0, self.height(), 20):
                 qp.drawLine(0, y, self.width(), y)
-                
+
         qp.end()
 
     def getPoints(self):
         return self.points
 
+
+# code is mostly from "Computational Geometry for Gesture Recognition.ipynb"
 class Recognizer:
     def distance(self, p1, p2):
         dx = p1[0] - p2[0]
@@ -195,99 +200,99 @@ class Recognizer:
         i = 1
         while i < len(point_list):
             p1 = point_list[i - 1]
-            
+
             # calculate the distance of the current pair of points
-            d = self.distance(p1,point_list[i])        
-            
+            d = self.distance(p1, point_list[i])
+
             if curpos + d >= stepsize:
                 # once we reach or step over our desired distance, we push our resampled point
                 # to the correct position based on our stepsize
                 nx = p1[0] + ((stepsize - curpos) / d) * (point_list[i][0] - p1[0])
                 ny = p1[1] + ((stepsize - curpos) / d) * (point_list[i][1] - p1[1])
-                            
+
                 # store the new data
-                newpoints.append([nx,ny])
-                point_list.insert(i,[nx,ny])
-                
+                newpoints.append([nx, ny])
+                point_list.insert(i, [nx, ny])
+
                 # reset curpos
                 curpos = 0
             else:
                 curpos += d
-                
+
             i += 1
-                            
+
         return newpoints
 
     def rotate(self, points, center, angle_degree):
         new_points = []
-        
+
         # represent our angle in radians
         angle_rad = angle_degree * (pi / 180)
-        
-        # define a 3x3 rotation matrix for clockwise rotation 
+
+        # define a 3x3 rotation matrix for clockwise rotation
         rot_matrix = matrix([[cos(angle_rad), -sin(angle_rad), 0],
-                            [sin(angle_rad),  cos(angle_rad), 0], 
+                            [sin(angle_rad),  cos(angle_rad), 0],
                             [      0,               0,        1]])
-        
-        t1 = matrix([[1, 0, -center[0]], 
+
+        t1 = matrix([[1, 0, -center[0]],
                     [0, 1, -center[1]],
                     [0, 0,     1     ]])
-        
-        t2 = matrix([[1, 0,  center[0]], 
+
+        t2 = matrix([[1, 0,  center[0]],
                     [0, 1,  center[1]],
                     [0, 0,     1     ]])
-        
+
         # create our actual transformation matrix which rotates a point of points around the center of points
-        transform = t2  @ rot_matrix @ t1 # beware of the order of multiplications, not commutative!
-        
+        transform = t2  @ rot_matrix @ t1  # beware of the order of multiplications, not commutative!
+
         for point in points:
-            
+
             # homogenous point of the point to be rotated
-            hom_point = matrix([[point[0]], [point[1]], [1]])  
-            
+            hom_point = matrix([[point[0]], [point[1]], [1]])
+
             # rotated point
             rotated_point = transform @ hom_point
-            
+
             # storing
-            new_points.append(( (rotated_point[0] / rotated_point[2]),float(rotated_point[1] / rotated_point[2])))
-            
+            new_points.append(((rotated_point[0] / rotated_point[2]), float(rotated_point[1] / rotated_point[2])))
+
         return new_points
 
     def centroid(self, points):
         xs, ys = zip(*points)
-        
+
         return (sum(xs) / len(xs), sum(ys) / len(ys))
 
     def angle_between(self, point, centroid):
         dx = centroid[0] - point[0]
         dy = centroid[1] - point[1]
-        
+
         # return the angle in degrees
-        return math.atan2(dy, dx) * 180 / math.pi 
+        return math.atan2(dy, dx) * 180 / math.pi
 
     def scale(self, points):
-    
+
         # the desired interval size
         size = 100
-        
+
         xs, ys = zip(*points)
-        
+
         # minimum and maximum occurrences of x and y values of the points
         x_min, x_max = min(xs), max(xs)
         y_min, y_max = min(ys), max(ys)
-        
+
         # calculate the range of the coordinates of the points
         x_range = x_max - x_min
         y_range = y_max - y_min
-        
+
         points_new = []
-        
+
         # map the points to the desired interval
         for p in points:
             p_new = ((p[0] - x_min) * size / x_range,
                     (p[1] - y_min) * size / y_range)
             points_new.append(p_new)
-            
+
         return points_new
 
     def normalize(self, points):
@@ -296,7 +301,7 @@ class Recognizer:
         angle = -self.angle_between(points_new[0], self.centroid(points_new))
         points_new = self.rotate(points_new, self.centroid(points_new), angle)
         points_new = self.scale(points_new)
-        
+
         return points_new
 
     def custom_filter(self, points):
@@ -306,11 +311,10 @@ class Recognizer:
         template = self.normalize(template)
         sample = self.normalize(sample)
         dist_all = 0
-        for p1, p2 in zip(sample,template):
+        for p1, p2 in zip(sample, template):
             dist = abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
             dist_all += dist
         return dist_all
-
 
 
 if __name__ == '__main__':
